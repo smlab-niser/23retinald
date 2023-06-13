@@ -21,7 +21,7 @@ class Metric:
         outputs = outputs.detach().cpu().numpy()
         labels = labels.detach().cpu().numpy().astype(np.int32)
         
-        outputs_thresholded = (outputs > threshold).astype(np.int)
+        outputs_thresholded = (outputs > threshold).astype(np.int32)
 
         self.tp += np.sum((outputs_thresholded * labels), axis=0)
         self.fp += np.sum((outputs_thresholded * (1 - labels)), axis=0)

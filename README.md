@@ -12,7 +12,7 @@ Through our project, we aim to contribute to the advancement of medical image an
 
 ## Dataset
 
-We used the [Multi-Label Retinal Diseases (MuReD) Dataset](https://data.mendeley.com/datasets/pc4mb3h8hz/2) for our research. This dataset contains 2208 retinal fundus images for multi label classification on 20 disease labels, divided into 1766 for training and 442 for validation. The dataset was created and used in paper [Multi-Label Retinal Disease Classification using Transformers](https://arxiv.org/abs/2207.02335).
+We used the [Multi-Label Retinal Diseases (MuReD) Dataset](https://data.mendeley.com/datasets/pc4mb3h8hz/2) for our research. This dataset contains 2208 retinal fundus images for multi-label classification on 20 disease labels, divided into 1766 for training and 442 for validation. The dataset was created and used in paper [Multi-Label Retinal Disease Classification using Transformers](https://arxiv.org/abs/2207.02335).
 
 **Citation:**
 
@@ -22,11 +22,3 @@ Mendeley Data (2022). *Multi-Label Retinal Diseases (MuReD) Dataset*. Mendeley. 
 
 You can access and download the dataset from the provided [Dataset Link](https://data.mendeley.com/datasets/pc4mb3h8hz/2).
 
-```python
-# Example code on how to load the dataset using Python
-import pandas as pd
-
-dataset_url = "https://data.mendeley.com/datasets/pc4mb3h8hz/2"
-data = pd.read_csv(dataset_url)
-
-# Your code for dataset exploration and analysis here

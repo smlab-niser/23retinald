@@ -22,3 +22,7 @@ Mendeley Data (2022). *Multi-Label Retinal Diseases (MuReD) Dataset*. Mendeley. 
 
 You can access and download the dataset from the provided [Dataset Link](https://data.mendeley.com/datasets/pc4mb3h8hz/2).
 
+## License
+This dataset is provided under [CC BY 4.0]. Please refer to the dataset's official documentation for specific licensing details.
+
+

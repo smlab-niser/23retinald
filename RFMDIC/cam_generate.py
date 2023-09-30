@@ -1,46 +1,78 @@
 import torch
-from torch.autograd import Function
-import cv2
+from captum.attr import ShapleyValueSampling
 import numpy as np
 
-class GradCAM:
-    def __init__(self, model, target_layer):
-        self.model = model
-        self.target_layer = target_layer
-        self.activation_maps = None
-        self.gradient_maps = None
-        self.register_hooks()
+class ShapCAMGenerator:
+    def __init__(self, model, device):
+        self.model = model                               # Initializing the model
+        self.device = device                             # Initializing the device
+        self.sampler = ShapleyValueSampling(model)       # Initializing sampler instance
+    
+    def generate_shap_cam(self, image, target_class):
+        image = image.to(self.device)                    # Passing the image to the device
+        
+        self.model.eval()                                # Evaluating the model on the image
+        self.sampler.model = self.model                  # Set the model for the sampler
+        print("done")
+        attributions = self.sampler.attribute(image, target=target_class)  # Pass the target_class to attribute method\
+        print("done")
+        shap_cam = torch.sum(attributions, dim=1, keepdim=True)  # Sum over channels
+        
+        shap_cam = shap_cam.cpu().detach().numpy()[0]            # Convert shap cam tensor to numpy array
+        shap_cam = np.maximum(0, shap_cam)                       # Apply ReLU to get only positive attributions. Set negative contributions to 0
+        shap_cam /= np.max(shap_cam)                             # Normalize to [0, 1]
+        
+        return shap_cam
 
-    def register_hooks(self):
-        def forward_hook(module, input, output):
-            self.activation_maps = output
 
-        def backward_hook(module, grad_input, grad_output):
-            self.gradient_maps = grad_output[0]
+# Function to generate heatmaps for a chunk of images
+def generate_heatmaps(image_chunk, model1, model2, shap_cam_generator1, shap_cam_generator2, device, a, b):
+    
+    heatmaps1 = []
+    heatmaps2 = []
+    for image in image_chunk:
+        image = image.unsqueeze(0).to(device)
+        
+        with torch.no_grad():
+            outputs1 = model1(image)
+            outputs2 = model2(image)
+            weighted_outputs = a * torch.sigmoid(outputs1) + b * torch.sigmoid(outputs2)
+            print(weighted_outputs)
+            target_class = torch.argmax(weighted_outputs).unsqueeze(0)
+            print(target_class)
+            
+        # Generate heatmap for model1
+        heatmap1 = shap_cam_generator1.generate_shap_cam(image, target_class)
+        heatmaps1.append(heatmap1)
+        
+        # Generate heatmap for model2
+        heatmap2 = shap_cam_generator2.generate_shap_cam(image, target_class)
+        heatmaps2.append(heatmap2)
+        
+    return heatmaps1, heatmaps2
 
-        target_layer_module = dict([*self.model.named_modules()])[self.target_layer]
-        target_layer_module.register_forward_hook(forward_hook)
-        target_layer_module.register_backward_hook(backward_hook)
 
-    def generate_heatmap(self, input_image, target_class):
-        self.model.zero_grad()
-        output = self.model(input_image)
-        one_hot = torch.zeros_like(output)
-        one_hot[0][target_class] = 1
-        output.backward(gradient=one_hot, retain_graph=True)
-        gradient_maps = self.gradient_maps.detach().cpu().numpy()[0]
-        activation_maps = self.activation_maps.detach().cpu().numpy()[0]
-        weights = np.mean(gradient_maps, axis=(1, 2))
-        cam = np.sum(weights * activation_maps, axis=0)
-        cam = np.maximum(cam, 0)
-        cam = cv2.resize(cam, input_image.shape[2:])
-        cam = cam - np.min(cam)
-        cam = cam / np.max(cam)
-        return cam
-
-def cam_generate(model, image, label):
-    transform = ...  # Define the necessary transformation to preprocess the image
-    input_image = transform(image).unsqueeze(0)
-    cam = GradCAM(model, target_layer='your_target_layer')
-    heatmap = cam.generate_heatmap(input_image, target_class=label)
-    return heatmap
+# Function to generate heatmaps for a chunk of images
+def generate_heatmap(image_chunk, model1, model2, shap_cam_generator1, device, a, b):
+    
+    heatmaps1 = []
+    for image in image_chunk:
+        image = image.unsqueeze(0).to(device)
+        
+        with torch.no_grad():
+            outputs1 = model1(image)
+            outputs2 = model2(image)
+            weighted_outputs = a * torch.sigmoid(outputs1) + b * torch.sigmoid(outputs2)
+            print(weighted_outputs)
+            target_class = torch.argmax(weighted_outputs).unsqueeze(0)
+            print(target_class)
+            
+        # Generate heatmap for model1
+        heatmap1 = shap_cam_generator1.generate_shap_cam(image, target_class)
+        heatmaps1.append(heatmap1)
+        
+        # Generate heatmap for model2
+        #heatmap2 = shap_cam_generator2.generate_shap_cam(image, target_class)
+        #heatmaps2.append(heatmap2)
+        
+    return heatmaps1

@@ -9,7 +9,7 @@ from posenc import positionalencoding2d
 
 # Variant 1
 class CTranEncoder(nn.Module):
-    def __init__(self, num_classes, embed_dim, num_layers, num_heads, backbone):
+    def __init__(self, num_classes, image_size, embed_dim, num_layers, num_heads, backbone): # image_size parameter is added to use in place of 384
         super(CTranEncoder, self).__init__()
         
         self.embed_dim = embed_dim
@@ -32,11 +32,11 @@ class CTranEncoder(nn.Module):
         self.bn = nn.BatchNorm1d(1, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         
         # Initialize the positional encoding matrix
-        self.positional_encoding = nn.Parameter(positionalencoding2d(embed_dim, height=384, width=384))
+        self.positional_encoding = nn.Parameter(positionalencoding2d(embed_dim, height=image_size, width=image_size))
         nn.init.normal_(self.positional_encoding, std=0.02)
         
         # Initialize the linear layer for dimensionality reduction
-        self.linear_reduction = nn.Linear(384*384, num_classes)
+        self.linear_reduction = nn.Linear(image_size*image_size, num_classes)
         
         # Initialize the class token
         # self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -45,7 +45,7 @@ class CTranEncoder(nn.Module):
     def forward(self, x): 
         # Pass the input through the backbone network
         # print("Before backbone:", x.shape) torch.Size([batch, channel, height, width])
-        x = self.backbone1(x)
+        x = self.backbone(x)
         # print("After backbone:", x.shape) torch.Size([num_classes, batch, embed_dim])
         # Reduce dimensions and expand positional encoding
         positional_encoding = self.positional_encoding.view(self.embed_dim, -1)
@@ -86,7 +86,7 @@ class CTranEncoder(nn.Module):
 
 #Variant 2
 class CTranEncoder2(nn.Module):
-    def __init__(self, num_classes, embed_dim, num_layers, num_heads, backbone1, backbone2):
+    def __init__(self, num_classes, image_size, embed_dim, num_layers, num_heads, backbone1, backbone2):
         super(CTranEncoder2, self).__init__()
         
         self.embed_dim = embed_dim
@@ -110,12 +110,12 @@ class CTranEncoder2(nn.Module):
         self.bn = nn.BatchNorm1d(1, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         
         # Initialize the positional encoding matrix
-        self.positional_encoding = nn.Parameter(positionalencoding2d(embed_dim, height=384, width=384))
+        self.positional_encoding = nn.Parameter(positionalencoding2d(embed_dim, height=image_size, width=image_size))
         nn.init.normal_(self.positional_encoding, std=0.02)
         # print("posenc size:", self.positional_encoding.size())
         
         # Initialize the linear layer for dimensionality reduction
-        self.linear_reduction = nn.Linear(384*384, 2*num_classes)
+        self.linear_reduction = nn.Linear(image_size*image_size, 2*num_classes)
 
     def forward(self, x): 
         y = self.backbone2(x)

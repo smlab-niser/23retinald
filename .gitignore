@@ -5,3 +5,5 @@ Original Images
 mured-data
 rfmid-data
 __pycache__
+model1.pth
+model2.pth
